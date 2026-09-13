@@ -1,6 +1,6 @@
 node_modules
 .expo
-assests
+assets
 src
 app.json
 App.tsx
