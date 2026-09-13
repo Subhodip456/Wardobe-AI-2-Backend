@@ -1,0 +1,11 @@
+node_modules
+.expo
+assests
+src
+app.json
+App.tsx
+babel.config.js
+pakage-lock.json
+package.json
+README.md
+tsconfig.json
