@@ -1,0 +1,15 @@
+node_modules/
+node_modules-sdk51-backup/
+package-lock-sdk51-backup.json
+.expo/
+dist/
+.env.example
+scripts/
+src/
+app.json
+App.tsx
+metro.config.js
+package.json
+package-lock.json
+package-lock-sdk51-backup.json
+tsconfig.json
