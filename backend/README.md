@@ -4,14 +4,14 @@ The try-on endpoint now calls OpenAI image editing with the person photo and gar
 
 ## Configure the existing Vercel deployment
 
-1. Keep this backend as the deployment's project root. Deploy these updated backend files; the old deployment has no `/api/try-on` route.
+1. Set the Vercel project's **Root Directory to `backend`**, not the repository root. The frontend is intentionally excluded from this GitHub repository. Keep Build Command unset and Output Directory unset; use `npm ci` for Install Command. The checked-in `vercel.json` selects the generic Node function deployment, with `api/index.js` loading the Express app and forwarding all existing URLs to it.
 2. In Vercel project environment variables, add `OPENAI_API_KEY` from your own OpenAI API project with billing and image-model access. Never add that key to React Native, an `EXPO_PUBLIC_*` variable, or source control.
 3. Add `TRY_ON_ACCESS_TOKEN`: a separate randomly generated private-test access code of at least 24 characters. A 32-byte random hex string is appropriate. Give this code only to trusted testers; they enter it in the Try on screen. **Do not use your OpenAI key as the access code.**
 4. Optionally set `OPENAI_IMAGE_MODEL`; default is `gpt-image-2`. The service also permits its dated snapshot and GPT Image 2.5 Sunburst/Flare aliases and September 8 snapshots. Availability depends on your OpenAI project.
-5. Set the Vercel function maximum duration to at least **300 seconds**, if supported by your plan/runtime, to accommodate the 240-second upstream timeout plus upload/response time. Redeploy after changing environment variables or function settings. Keep your existing Node.js version unchanged.
+5. `vercel.json` requests a **300-second** function duration to accommodate the 240-second upstream timeout plus upload/response time. Enable Fluid compute / confirm your Vercel plan supports that duration; a legacy Hobby runtime without Fluid compute cannot provide it. Redeploy after changing environment variables or function settings. No Node.js installation or runtime version change is included in this code update.
 6. Open `https://wardobe-ai-2-backend.vercel.app/api/try-on/config`. It must return `"available": true`. This check does not generate images or incur an image-generation charge. Then test from the app with your own photos and the private access code. Each generation may incur an OpenAI API charge.
 
-The code exports the Express app for serverless deployment and still supports `npm start` locally. In the backend directory, run `npm install`, copy `.env.example` to an ignored `.env`, configure it, then `npm start`. Tests use only mocks: `npm test`. No Node.js upgrade is required by this change.
+The code exports the Express app for serverless deployment and still supports `npm start` locally. In the backend directory, run `npm ci`, copy `.env.example` to an ignored `.env`, configure it, then `npm start`. Tests use only mocks: `npm test`. The backend lockfile is committed for reproducible installs. No Node.js upgrade is required by this change.
 
 ## HTTP contract
 

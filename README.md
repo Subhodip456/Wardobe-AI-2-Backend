@@ -1,5 +1,10 @@
 # Wardrobe & Outfit Planner AI
 
+> **Backend deployment:** This GitHub repository publishes the `backend/` folder.
+> Set Vercel's Root Directory to `backend`. Follow [the backend deployment guide](backend/README.md)
+> for OpenAI try-on keys, private access codes, and verification. The React Native
+> app described below is present locally but intentionally not tracked in this repository.
+
 A React Native (Expo) app: photograph your clothes, get AI-generated outfit
 suggestions by occasion/weather, monetized via Google Play subscriptions.
 

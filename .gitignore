@@ -1,30 +1,25 @@
-<<<<<<< HEAD
+# Dependencies and generated files, at any depth.
 node_modules/
 node_modules-sdk51-backup/
-package-lock-sdk51-backup.json
 .expo/
 dist/
-.env.example
-scripts/
-src/
-app.json
-App.tsx
-metro.config.js
-package.json
-package-lock.json
-package-lock-sdk51-backup.json
-tsconfig.json
-=======
-node_modules
+.vercel/
+*.log
+
+# Real secrets must never be committed; keep setup examples trackable.
 .env
-.expo
-/assets
-/src
+.env.*
+!.env.example
+
+# This repository publishes the backend; the mobile app remains local.
+/assets/
+/src/
+/scripts/
 /app.json
 /App.tsx
 /babel.config.js
+/metro.config.js
 /package.json
 /package-lock.json
-/README.md
+/package-lock-sdk51-backup.json
 /tsconfig.json
->>>>>>> 61b8ef536785e623ebbe0c633b55f13aa576a28f

@@ -26,7 +26,7 @@ function getTryOnConfig(env = process.env) {
     return { ...base, code: 'PROVIDER_NOT_CONFIGURED', message: 'Add OPENAI_API_KEY to the backend environment and redeploy to enable AI previews. A Claude key cannot generate images.' };
   }
   if (!env.TRY_ON_ACCESS_TOKEN || env.TRY_ON_ACCESS_TOKEN.length < 24 || env.TRY_ON_ACCESS_TOKEN.length > 512 ||
-      env.TRY_ON_ACCESS_TOKEN.trim() !== env.TRY_ON_ACCESS_TOKEN || /\s/.test(env.TRY_ON_ACCESS_TOKEN) ||
+      /[^\x21-\x7e]/.test(env.TRY_ON_ACCESS_TOKEN) ||
       env.TRY_ON_ACCESS_TOKEN === env.OPENAI_API_KEY.trim() || /^sk-/.test(env.TRY_ON_ACCESS_TOKEN)) {
     return { ...base, code: 'ACCESS_NOT_CONFIGURED', message: 'The backend owner must configure a separate private try-on access code of at least 24 characters and redeploy.' };
   }

@@ -37,6 +37,8 @@ test('configuration fails closed without a provider key or independent access co
   assert.equal(getTryOnConfig({ ...env, TRY_ON_ACCESS_TOKEN: 'short' }).available, false);
   assert.equal(getTryOnConfig({ ...env, TRY_ON_ACCESS_TOKEN: `${accessCode} ` }).available, false);
   assert.equal(getTryOnConfig({ ...env, TRY_ON_ACCESS_TOKEN: 'has spaces in otherwise long code' }).available, false);
+  assert.equal(getTryOnConfig({ ...env, TRY_ON_ACCESS_TOKEN: `${accessCode}é` }).available, false);
+  assert.equal(getTryOnConfig({ ...env, TRY_ON_ACCESS_TOKEN: `${accessCode}\u0000` }).available, false);
   assert.equal(getTryOnConfig({ ...env, TRY_ON_ACCESS_TOKEN: 'a'.repeat(513) }).available, false);
   assert.equal(getTryOnConfig({ ...env, TRY_ON_ACCESS_TOKEN: env.OPENAI_API_KEY }).available, false);
   assert.equal(getTryOnConfig({ ...env, TRY_ON_ACCESS_TOKEN: 'sk-do-not-enter-an-openai-provider-key-here' }).available, false);
