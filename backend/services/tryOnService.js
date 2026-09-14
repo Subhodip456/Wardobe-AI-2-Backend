@@ -21,7 +21,7 @@ class TryOnError extends Error {
 }
 
 function getTryOnConfig(env = process.env) {
-  const base = { available: true, provider: 'openai', requiresAccessCode: false };
+  const base = { available: false, provider: 'openai', requiresAccessCode: true };
   if (!env.OPENAI_API_KEY?.trim()) {
     return { ...base, code: 'PROVIDER_NOT_CONFIGURED', message: 'Add OPENAI_API_KEY to the backend environment and redeploy to enable AI previews. A Claude key cannot generate images.' };
   }
