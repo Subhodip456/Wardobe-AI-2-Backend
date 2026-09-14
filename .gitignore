@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 node_modules/
 node_modules-sdk51-backup/
 package-lock-sdk51-backup.json
@@ -13,3 +14,17 @@ package.json
 package-lock.json
 package-lock-sdk51-backup.json
 tsconfig.json
+=======
+node_modules
+.env
+.expo
+/assets
+/src
+/app.json
+/App.tsx
+/babel.config.js
+/package.json
+/package-lock.json
+/README.md
+/tsconfig.json
+>>>>>>> 61b8ef536785e623ebbe0c633b55f13aa576a28f

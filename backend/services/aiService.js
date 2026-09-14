@@ -1,18 +1,26 @@
 const Anthropic = require('@anthropic-ai/sdk');
 
+<<<<<<< HEAD
 // Initialize only when a Claude endpoint is used so OpenAI try-on can run independently.
 let anthropic;
 function getAnthropic() {
   if (!anthropic) anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   return anthropic;
 }
+=======
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+>>>>>>> 61b8ef536785e623ebbe0c633b55f13aa576a28f
 
 /**
  * Tags a clothing image: category, dominant color, season, and free-form tags.
  * imageBase64 should be a base64-encoded JPEG/PNG (no data: prefix).
  */
 async function tagClothingImage(imageBase64, mediaType = 'image/jpeg') {
+<<<<<<< HEAD
   const message = await getAnthropic().messages.create({
+=======
+  const message = await anthropic.messages.create({
+>>>>>>> 61b8ef536785e623ebbe0c633b55f13aa576a28f
     model: 'claude-sonnet-4-6',
     max_tokens: 300,
     messages: [
@@ -50,7 +58,11 @@ async function generateOutfit({ items, occasion, weather }) {
     .map((i) => `- id:${i.id} | ${i.category} | ${i.color} | season:${i.season} | tags:${(i.tags || []).join(',')}`)
     .join('\n');
 
+<<<<<<< HEAD
   const message = await getAnthropic().messages.create({
+=======
+  const message = await anthropic.messages.create({
+>>>>>>> 61b8ef536785e623ebbe0c633b55f13aa576a28f
     model: 'claude-sonnet-4-6',
     max_tokens: 400,
     messages: [
