@@ -2,6 +2,7 @@ const express = require('express');
 const { getTryOnConfig, validAccessToken, generateTryOn, TryOnError } = require('../services/tryOnService');
 
 function createTryOnRouter({ env = process.env, fetchImpl = global.fetch, timeoutMs } = {}) {
+  console.log(env);
   const router = express.Router();
   router.use((req, res, next) => {
     res.set('Cache-Control', 'no-store');
