@@ -147,7 +147,7 @@ test('actual exported backend boots without API keys and preserves route validat
     assert.equal(response.body.code, 'PROVIDER_NOT_CONFIGURED');
     assert.equal(response.body.provider, 'huggingface');
     assert.equal(response.body.requiresAccessCode, true);
-    assert.equal(response.body.model, 'black-forest-labs/FLUX.1-Kontext-dev');
+    assert.equal(response.body.model, 'black-forest-labs/FLUX.2-klein-9B');
   });
 
   await t.test('POST /api/try-on fails closed with 503 when no image provider is configured', async () => {

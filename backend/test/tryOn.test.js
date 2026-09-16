@@ -19,7 +19,7 @@ test('configuration requires Hugging Face credentials and a separate access code
   assert.equal(getTryOnConfig({ HF_TOKEN: providerToken }).code, 'ACCESS_NOT_CONFIGURED');
   assert.equal(getTryOnConfig(env).available, true);
   assert.equal(getTryOnConfig(env).provider, 'huggingface');
-  assert.equal(getTryOnConfig(env).model, 'black-forest-labs/FLUX.1-Kontext-dev');
+  assert.equal(getTryOnConfig(env).model, 'black-forest-labs/FLUX.2-klein-9B');
   assert.equal(getTryOnConfig({ ...env, TRY_ON_ACCESS_TOKEN: providerToken }).code, 'ACCESS_NOT_CONFIGURED');
 });
 
@@ -45,7 +45,7 @@ test('generation routes through Hugging Face without logging credentials or phot
       env,
       fetchImpl: async (url, options) => { request = { url, options }; return imageResponse(); },
     });
-    assert.match(request.url, /router\.huggingface\.co\/fal-ai\/models\/black-forest-labs\/FLUX\.1-Kontext-dev/);
+    assert.match(request.url, /router\.huggingface\.co\/fal-ai\/models\/black-forest-labs\/FLUX\.2-klein-9B/);
     assert.equal(request.options.headers.Authorization, `Bearer ${providerToken}`);
     assert.equal(JSON.parse(request.options.body).inputs, jpeg);
     assert.match(result.imageDataUrl, /^data:image\/png;base64,/);
