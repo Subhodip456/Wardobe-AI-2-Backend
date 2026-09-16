@@ -7,7 +7,7 @@ const DEFAULT_TIMEOUT_MS = 240000;
 // Commercially usable image-to-image model. Override only after verifying the selected
 // Hugging Face provider supports the model through its router.
 const DEFAULT_IMAGE_MODEL = 'Qwen/Qwen-Image-Edit-2511';
-const PROVIDER = 'huggingface';
+const PROVIDER = 'fal-ai';
 const CATEGORIES = new Set(['top', 'bottom', 'dress', 'outerwear']);
 const DISCLAIMER = 'AI-generated styling preview, not a fit or size guarantee. Details and appearance may differ from the real garment.';
 
