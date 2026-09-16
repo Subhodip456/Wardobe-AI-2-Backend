@@ -4,8 +4,8 @@ const INPUT_IMAGE_BYTES = 1024 * 1024;
 const OUTPUT_IMAGE_BYTES = 2900000;
 const PROVIDER_RESPONSE_BYTES = 4100000;
 const DEFAULT_TIMEOUT_MS = 240000;
-// Hugging Face's documented image-to-image model/provider pair; override in Vercel if needed.
-//const DEFAULT_IMAGE_MODEL = 'black-forest-labs/FLUX.2-klein-9B';
+// Commercially usable image-to-image model. Override only after verifying the selected
+// Hugging Face provider supports the model through its router.
 const DEFAULT_IMAGE_MODEL = 'black-forest-labs/FLUX.2-klein-4B';
 const PROVIDER = 'huggingface';
 const CATEGORIES = new Set(['top', 'bottom', 'dress', 'outerwear']);

@@ -1,13 +1,13 @@
 # Wardrobe AI backend
 
-The try-on endpoint uses Hugging Face Inference Providers for an experimental image-to-image styling preview. The default model is `black-forest-labs/FLUX.2-klein-9B`; set `HF_IMAGE_MODEL` and `HF_PROVIDER` in Vercel if you choose another compatible model/provider.
+The try-on endpoint uses Hugging Face Inference Providers for an experimental image-to-image styling preview. The default model is `black-forest-labs/FLUX.2-klein-4B`; set `HF_IMAGE_MODEL` and `HF_PROVIDER` in Vercel if you choose another compatible model/provider.
 
 ## Vercel configuration
 
 Set these server-only variables in the Vercel environment and redeploy:
 
 - `HF_TOKEN`: a Hugging Face user token with Inference Providers permission. Never expose it in Expo or `EXPO_PUBLIC_*` variables.
-- `HF_IMAGE_MODEL`: defaults to `black-forest-labs/FLUX.2-klein-9B`.
+- `HF_IMAGE_MODEL`: defaults to `black-forest-labs/FLUX.2-klein-4B`.
 - `HF_PROVIDER`: defaults to `fal-ai`.
 - `TRY_ON_ACCESS_TOKEN`: a separate private beta code, 24–512 printable characters. It is not the HF token.
 
