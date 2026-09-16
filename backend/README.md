@@ -1,20 +1,16 @@
 # Wardrobe AI backend
 
-The try-on endpoint uses Hugging Face Inference Providers for an experimental image-to-image styling preview. The default model is `black-forest-labs/FLUX.2-klein-4B`; set `HF_IMAGE_MODEL` and `HF_PROVIDER` in Vercel if you choose another compatible model/provider.
+Try-on uses Fal's dedicated `fal-ai/image-apps-v2/virtual-try-on` endpoint. It receives separate person and garment images, preserving the person’s pose while generating the preview.
 
 ## Vercel configuration
 
-Set these server-only variables in the Vercel environment and redeploy:
+Set these server-only Production environment variables, then redeploy:
 
-- `HF_TOKEN`: a Hugging Face user token with Inference Providers permission. Never expose it in Expo or `EXPO_PUBLIC_*` variables.
-- `HF_IMAGE_MODEL`: defaults to `black-forest-labs/FLUX.2-klein-4B`.
-- `HF_PROVIDER`: defaults to `fal-ai`.
-- `TRY_ON_ACCESS_TOKEN`: a separate private beta code, 24–512 printable characters. It is not the HF token.
+- `FAL_KEY`: API key created in the Fal dashboard. Do not expose it in the React Native app or an `EXPO_PUBLIC_*` variable.
+- `TRY_ON_ACCESS_TOKEN`: a separate private-beta code, 24–512 printable characters. It must not be the Fal key.
 
-Hugging Face documents a small, changeable free monthly inference credit; it is a trial allowance, not unlimited free production generation. Provider availability and model support can change.
+`GET /api/try-on/config` validates configuration without revealing keys or calling Fal. `POST /api/try-on` requires the beta access code and explicit `consentProvider: "fal"` before either photo is processed.
 
-`GET /api/try-on/config` reports safe readiness without exposing credentials or invoking a provider. `POST /api/try-on` requires the private access code, explicit `consentProvider: "huggingface"`, a JPEG person photo and garment photo, and a supported category.
+Images are sent as data URIs directly to Fal’s virtual try-on endpoint. The output is downloaded from Fal’s HTTPS media host, checked as a JPEG/PNG, then returned to the app as a data URI. Nothing is written to this server’s disk or database.
 
-The current Hugging Face image-to-image API accepts one source image. This integration therefore provides a styling-preview prototype using the person image and garment category; it does not guarantee exact garment transfer or fit. A production-grade two-image virtual try-on model/provider should be added separately after evaluating its license, privacy, capacity and cost.
-
-Run the backend tests with `npm test`. Tests use dummy credentials and mocked provider responses; they never spend inference credits.
+Fal is paid, usage-based inference. Before enabling general access, set account spending limits and confirm current endpoint pricing in the Fal dashboard. Run local tests with `npm test`; tests use dummy credentials and mocked Fal responses only.
