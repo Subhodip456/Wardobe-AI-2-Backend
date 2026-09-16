@@ -103,34 +103,28 @@ function validateGeneratedDataUrl(value) {
   return value;
 }
 
-async function readFalOutput(url, fetchImpl, signal) {
+function validateFalMediaUrl(value) {
   let parsed;
-  try { parsed = new URL(url); } catch { throw new TryOnError(502, 'INVALID_PREVIEW', 'Fal returned an invalid preview URL.'); }
-  // Fal's generated media is served from its own HTTPS media hosts. Never follow a
-  // provider-supplied URL to an arbitrary host from the Vercel server.
+  try { parsed = new URL(value); } catch { throw new TryOnError(502, 'INVALID_PREVIEW', 'Fal returned an invalid preview URL.'); }
+  // Fal's generated media is served from its own HTTPS media hosts. Only expose
+  // this allowlisted URL to the mobile app; never accept an arbitrary provider URL.
   if (parsed.protocol !== 'https:' || !parsed.hostname.endsWith('.fal.media')) {
     throw new TryOnError(502, 'INVALID_PREVIEW', 'Fal returned an unexpected preview location.');
   }
-  let response;
-  try { response = await fetchImpl(parsed, { method: 'GET', redirect: 'error', signal }); } catch {
-    throw new TryOnError(502, 'INVALID_PREVIEW', 'Fal returned a preview that could not be retrieved.');
-  }
-  if (!response.ok) throw new TryOnError(502, 'INVALID_PREVIEW', 'Fal returned a preview that could not be retrieved.');
-  const contentType = response.headers?.get?.('content-type')?.split(';', 1)[0]?.toLowerCase();
-  if (contentType !== 'image/jpeg' && contentType !== 'image/png' && contentType !== 'image/webp') throw new TryOnError(502, 'INVALID_PREVIEW', 'Fal returned an invalid preview image.');
-  const bytes = Buffer.from(await response.arrayBuffer());
-  const base64 = bytes.toString('base64');
-  const valid = contentType === 'image/jpeg' ? validJpegBase64(base64, OUTPUT_IMAGE_BYTES)
-    : contentType === 'image/png' ? validPngBase64(base64, OUTPUT_IMAGE_BYTES)
-      : validWebpBase64(base64, OUTPUT_IMAGE_BYTES);
-  if (!valid) throw new TryOnError(502, 'INVALID_PREVIEW', 'Fal returned an invalid preview image.');
-  return `data:${contentType};base64,${base64}`;
+  return parsed.toString();
+}
+
+function getFalPreviewUrl(result) {
+  // The Fal client returns { data: { images: [...] } }; accepting `result` as a
+  // fallback keeps this stable if a future client version returns the output directly.
+  const output = result?.data ?? result;
+  return Array.isArray(output?.images) ? output.images[0]?.url : undefined;
 }
 
 async function generateTryOn(body, { env = process.env, fetchImpl = global.fetch, signal, timeoutMs = DEFAULT_TIMEOUT_MS, falClient } = {}) {
   const config = getTryOnConfig(env);
   if (!config.available) throw new TryOnError(503, config.code, config.message);
-  const { personImage, garmentImage, category } = validateTryOnInput(body);
+  const { personImage, garmentImage } = validateTryOnInput(body);
   if (signal?.aborted) throw new TryOnError(499, 'REQUEST_CANCELLED', 'The preview request was cancelled.');
   const controller = new AbortController();
   let timedOut = false;
@@ -152,8 +146,12 @@ async function generateTryOn(body, { env = process.env, fetchImpl = global.fetch
         aspect_ratio: { ratio: '3:4' },
       },
     });
-    const imageUrl = result?.data?.images?.[0]?.url;
-    return { imageDataUrl: imageUrl?.startsWith('data:') ? validateGeneratedDataUrl(imageUrl) : await readFalOutput(imageUrl, fetchImpl, controller.signal), disclaimer: DISCLAIMER };
+    const imageUrl = getFalPreviewUrl(result);
+    if (typeof imageUrl !== 'string') {
+      throw new TryOnError(502, 'INVALID_PREVIEW', 'Fal returned no usable preview image. Please try again later.');
+    }
+    const previewUrl = imageUrl.startsWith('data:') ? validateGeneratedDataUrl(imageUrl) : validateFalMediaUrl(imageUrl);
+    return { imageUrl: previewUrl, disclaimer: DISCLAIMER };
   } catch (error) {
     if (timedOut) throw new TryOnError(504, 'GENERATION_TIMEOUT', 'Image generation took too long. A request may still have been charged; wait before trying again.');
     if (signal?.aborted) throw new TryOnError(499, 'REQUEST_CANCELLED', 'The preview request was cancelled.');

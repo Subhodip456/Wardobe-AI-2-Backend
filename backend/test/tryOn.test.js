@@ -28,21 +28,16 @@ test('input requires fresh Fal consent and valid JPEGs', () => {
   assert.throws(() => validateTryOnInput({ ...input, personImage: 'not-an-image' }), /JPEG/);
 });
 
-test('generation sends separate person and garment images to Fal and safely returns its image', async () => {
+test('generation sends separate person and garment images to Fal and returns its trusted media URL', async () => {
   let endpoint;
   let options;
   const falClient = { subscribe: async (id, request) => { endpoint = id; options = request; return { data: { images: [{ url: 'https://v3b.fal.media/files/test-preview.png' }] } }; } };
-  const pngBytes = Uint8Array.from(Buffer.from(outputPng.split(',')[1], 'base64'));
-  const fetchImpl = async (url) => {
-    assert.equal(String(url), 'https://v3b.fal.media/files/test-preview.png');
-    return { ok: true, headers: { get: () => 'image/png' }, arrayBuffer: async () => pngBytes.buffer };
-  };
-  const result = await generateTryOn(input, { env, falClient, fetchImpl });
+  const result = await generateTryOn(input, { env, falClient });
   assert.equal(endpoint, FAL_TRY_ON_ENDPOINT);
   assert.equal(options.input.person_image_url, image);
   assert.equal(options.input.clothing_image_url, image);
   assert.equal(options.input.preserve_pose, true);
-  assert.match(result.imageDataUrl, /^data:image\/png;base64,/);
+  assert.equal(result.imageUrl, 'https://v3b.fal.media/files/test-preview.png');
 });
 
 test('Fal errors are sanitized and not leaked to the client', async () => {
