@@ -1,6 +1,6 @@
 const Anthropic = require('@anthropic-ai/sdk');
 
-// Initialize only when a Claude endpoint is used so OpenAI try-on can run independently.
+// Initialize only when a Claude endpoint is used so virtual try-on can run independently.
 let anthropic;
 function getAnthropic() {
   if (!anthropic) anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });

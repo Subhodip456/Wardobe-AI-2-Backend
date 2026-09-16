@@ -59,6 +59,15 @@ function validPngBase64(base64, maximumBytes) {
     bytes.subarray(-12).equals(Buffer.from([0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130]));
 }
 
+function validWebpBase64(base64, maximumBytes) {
+  const bytes = decodeBase64(base64, maximumBytes);
+  // A WebP file is a RIFF container whose format tag is WEBP. The mobile
+  // client still decodes the image; this only verifies the returned file is a
+  // bounded image container before it is forwarded to the app.
+  return !!bytes && bytes.length >= 12 && bytes.subarray(0, 4).equals(Buffer.from('RIFF')) &&
+    bytes.subarray(8, 12).equals(Buffer.from('WEBP'));
+}
+
 function validateTryOnInput(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw new TryOnError(400, 'INVALID_REQUEST', 'Choose a person photo and a garment before generating.');
   if (body.consent !== true) throw new TryOnError(400, 'CONSENT_REQUIRED', 'Confirm permission to send both photos to the backend and Fal for this preview.');
@@ -85,9 +94,11 @@ function mapFalError(error) {
 
 function validateGeneratedDataUrl(value) {
   if (typeof value !== 'string' || !value.startsWith('data:image/')) throw new TryOnError(502, 'INVALID_PREVIEW', 'Fal returned no usable preview image. Please try again later.');
-  const match = /^data:(image\/(?:jpeg|png));base64,([A-Za-z0-9+/]*={0,2})$/.exec(value);
+  const match = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]*={0,2})$/.exec(value);
   if (!match) throw new TryOnError(502, 'INVALID_PREVIEW', 'Fal returned an invalid preview image. Please try again later.');
-  const valid = match[1] === 'image/jpeg' ? validJpegBase64(match[2], OUTPUT_IMAGE_BYTES) : validPngBase64(match[2], OUTPUT_IMAGE_BYTES);
+  const valid = match[1] === 'image/jpeg' ? validJpegBase64(match[2], OUTPUT_IMAGE_BYTES)
+    : match[1] === 'image/png' ? validPngBase64(match[2], OUTPUT_IMAGE_BYTES)
+      : validWebpBase64(match[2], OUTPUT_IMAGE_BYTES);
   if (!valid) throw new TryOnError(502, 'INVALID_PREVIEW', 'Fal returned an invalid preview image. Please try again later.');
   return value;
 }
@@ -106,16 +117,14 @@ async function readFalOutput(url, fetchImpl, signal) {
   }
   if (!response.ok) throw new TryOnError(502, 'INVALID_PREVIEW', 'Fal returned a preview that could not be retrieved.');
   const contentType = response.headers?.get?.('content-type')?.split(';', 1)[0]?.toLowerCase();
-  if (contentType !== 'image/jpeg' && contentType !== 'image/png') throw new TryOnError(502, 'INVALID_PREVIEW', 'Fal returned an invalid preview image.');
+  if (contentType !== 'image/jpeg' && contentType !== 'image/png' && contentType !== 'image/webp') throw new TryOnError(502, 'INVALID_PREVIEW', 'Fal returned an invalid preview image.');
   const bytes = Buffer.from(await response.arrayBuffer());
   const base64 = bytes.toString('base64');
-  const valid = contentType === 'image/jpeg' ? validJpegBase64(base64, OUTPUT_IMAGE_BYTES) : validPngBase64(base64, OUTPUT_IMAGE_BYTES);
+  const valid = contentType === 'image/jpeg' ? validJpegBase64(base64, OUTPUT_IMAGE_BYTES)
+    : contentType === 'image/png' ? validPngBase64(base64, OUTPUT_IMAGE_BYTES)
+      : validWebpBase64(base64, OUTPUT_IMAGE_BYTES);
   if (!valid) throw new TryOnError(502, 'INVALID_PREVIEW', 'Fal returned an invalid preview image.');
   return `data:${contentType};base64,${base64}`;
-}
-
-function makePrompt(category) {
-  return `Create a realistic virtual try-on preview. Dress the consenting person in the exact ${category} garment shown in the garment reference. Preserve the person's identity, face, skin tone, body shape, pose, hair, camera perspective, and background. Preserve the garment's color, cut, material, texture, and visible pattern. Keep the person fully clothed. Do not add text, watermarks, measurements, collages, or claims of exact fit.`;
 }
 
 async function generateTryOn(body, { env = process.env, fetchImpl = global.fetch, signal, timeoutMs = DEFAULT_TIMEOUT_MS, falClient } = {}) {
