@@ -2,7 +2,7 @@
 
 > **Backend deployment:** This GitHub repository publishes the `backend/` folder.
 > Set Vercel's Root Directory to `backend`. Follow [the backend deployment guide](backend/README.md)
-> for OpenAI try-on keys, private access codes, and verification. The React Native
+> for Google Gemini try-on keys, private access codes, and verification. The React Native
 > app described below is present locally but intentionally not tracked in this repository.
 
 A React Native (Expo) app: photograph your clothes, get AI-generated outfit
@@ -44,22 +44,25 @@ Onboarding offers a personal closet or an optional photo-based sample collection
 Pieces can be edited or removed with undo; looks can be saved, favorited, and marked worn.
 
 Style currently uses a category-aware on-device combination builder. It does not
-call the AI backend or consume AI credits. Try on now connects to OpenAI image
-editing through the backend: choose a garment and a person photo, enter the
+call the AI backend or consume AI credits. Try on now connects to Google Gemini
+Nano Banana 2 (`gemini-3.1-flash-image`) through the backend: choose a garment and a person photo, enter the
 private test access code, consent to upload, then generate and compare the result
 with the original. The screen checks the deployed backend configuration and
 explains missing routes or credentials instead of showing a permanently disabled
 placeholder. Sample photos require an internet connection.
 
 **To enable real try-on on your existing Vercel deployment:** deploy the updated
-`backend` directory, configure server-only `OPENAI_API_KEY` and a separate random
+`backend` directory, configure server-only `GEMINI_API_KEY` and a separate random
 `TRY_ON_ACCESS_TOKEN` of at least 24 characters, allow a 300-second function
 duration, and redeploy. Enter only the private access code in the app—not the
-OpenAI key. Check `/api/try-on/config` on the deployment; `available: true` means
+Gemini key. Check `/api/try-on/config` on the deployment; `available: true` means
 configuration is present, not that billing/model access has been verified.
 See [backend setup and deployment instructions](backend/README.md).
-OpenAI API access/billing is separate from this coding chat; no shared assistant
-credentials are supplied. Node.js is not changed.
+Nano Banana 2 API generation requires a billing-enabled Google project; it is not
+unlimited free image generation. No shared assistant credentials are supplied.
+Node.js is not changed. Reload the updated mobile app as well as redeploying the
+backend: its consent now explicitly names Google Gemini. Old OpenAI-consent
+requests are rejected instead of silently sending photos to a different provider.
 
 This is a private-beta integration. Do not distribute the shared access code in a
 public app. Verified user authentication, durable usage limits and job recovery

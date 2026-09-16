@@ -16,7 +16,7 @@ function createTryOnRouter({ env = process.env, fetchImpl = global.fetch, timeou
     if (!config.available) return res.status(503).json({ code: config.code, message: config.message });
     // Authenticate before decoding a potentially large photo upload. Never embed this code in the app bundle.
     if (!validAccessToken(req.get('Authorization'), env.TRY_ON_ACCESS_TOKEN)) {
-      return res.status(401).json({ code: 'ACCESS_CODE_REQUIRED', message: 'Enter the private try-on access code provided by the backend owner. Do not enter an OpenAI API key.' });
+      return res.status(401).json({ code: 'ACCESS_CODE_REQUIRED', message: 'Enter the private try-on access code provided by the backend owner. Do not enter a Gemini or other provider API key.' });
     }
     if (!req.is('application/json')) {
       return res.status(415).json({ code: 'JSON_REQUIRED', message: 'Send the preview request as JSON.' });

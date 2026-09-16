@@ -10,10 +10,10 @@ const backendRoot = path.resolve(__dirname, '..');
 
 function deploymentFiles(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    if (['node_modules', '.git', '.vercel', 'coverage'].includes(entry.name)) return [];
+    if (['node_modules', 'node_modules-sdk51-backup', '.git', '.vercel', '.expo', '.next', '.codex', '.agents', 'coverage', 'dist', 'build'].includes(entry.name)) return [];
     const filename = path.join(directory, entry.name);
     if (entry.isDirectory()) return deploymentFiles(filename);
-    return entry.isFile() && (/\.(js|json)$/.test(entry.name) || entry.name === '.env.example')
+    return entry.isFile() && (/\.(?:[cm]?[jt]sx?|json|ya?ml)$/.test(entry.name) || entry.name === '.env.example')
       ? [filename]
       : [];
   });
@@ -57,8 +57,33 @@ test('deployable backend files and root ignore rules contain no merge-conflict m
   if (fs.existsSync(rootIgnore)) files.push(rootIgnore);
   const conflictMarker = /^(?:<{7}(?:\s|$)|={7}\s*$|>{7}(?:\s|$)|\|{7}(?:\s|$))/m;
   for (const filename of files) {
-    assert.doesNotMatch(fs.readFileSync(filename, 'utf8'), conflictMarker, path.relative(backendRoot, filename));
+    // Only report a filename: source text must never be copied into test output.
+    assert.equal(conflictMarker.test(fs.readFileSync(filename, 'utf8')), false, path.relative(backendRoot, filename));
   }
+});
+
+test('deployable source files contain no embedded provider credentials', () => {
+  const repositoryRoot = path.join(backendRoot, '..');
+  // Exclude developer .env files; check code, configuration, and example env files.
+  // This reports filenames only, even if an accidentally pasted credential is found.
+  const credentialPattern = /(?:AIza[A-Za-z0-9_-]{35}|sk-(?:proj-|svcacct-|ant-api\d{2}-)?[A-Za-z0-9_-]{32,})/;
+  const files = deploymentFiles(backendRoot);
+  // Standalone backend uploads have no containing app checkout. Do not scan their
+  // parent directory, vendor backups, or unrelated deployment files.
+  if (fs.existsSync(path.join(repositoryRoot, '.git'))) {
+    for (const sibling of ['src', 'scripts']) {
+      const directory = path.join(repositoryRoot, sibling);
+      if (fs.existsSync(directory) && fs.statSync(directory).isDirectory()) files.push(...deploymentFiles(directory));
+    }
+    for (const name of ['app.json', 'app.config.js', 'app.config.ts', 'package.json', 'eas.json', 'babel.config.js', 'metro.config.js', '.env.example']) {
+      const filename = path.join(repositoryRoot, name);
+      if (fs.existsSync(filename)) files.push(filename);
+    }
+  }
+  const affectedFiles = files
+    .filter((filename) => credentialPattern.test(fs.readFileSync(filename, 'utf8')))
+    .map((filename) => path.relative(repositoryRoot, filename));
+  assert.deepEqual(affectedFiles, [], 'Remove embedded provider credentials from the listed files');
 });
 
 test('Vercel routes target an existing function with an adequate image-generation duration', () => {
@@ -72,7 +97,7 @@ test('Vercel routes target an existing function with an adequate image-generatio
 
 test('actual exported backend boots without API keys and preserves route validation', async (t) => {
   // Empty values prevent dotenv from loading real credentials from a developer's .env file.
-  const keys = ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'TRY_ON_ACCESS_TOKEN', 'OPENAI_IMAGE_MODEL'];
+  const keys = ['GEMINI_API_KEY', 'GEMINI_IMAGE_MODEL', 'OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'TRY_ON_ACCESS_TOKEN', 'OPENAI_IMAGE_MODEL'];
   const previous = keys.map((key) => [key, process.env[key]]);
   for (const key of keys) process.env[key] = '';
   t.after(() => {
@@ -120,6 +145,9 @@ test('actual exported backend boots without API keys and preserves route validat
     assert.equal(response.status, 200);
     assert.equal(response.body.available, false);
     assert.equal(response.body.code, 'PROVIDER_NOT_CONFIGURED');
+    assert.equal(response.body.provider, 'gemini');
+    assert.equal(response.body.requiresAccessCode, true);
+    assert.equal(response.body.model, 'gemini-3.1-flash-image');
   });
 
   await t.test('POST /api/try-on fails closed with 503 when no image provider is configured', async () => {
