@@ -97,7 +97,7 @@ test('Vercel routes target an existing function with an adequate image-generatio
 
 test('actual exported backend boots without API keys and preserves route validation', async (t) => {
   // Empty values prevent dotenv from loading real credentials from a developer's .env file.
-  const keys = ['GEMINI_API_KEY', 'GEMINI_IMAGE_MODEL', 'OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'TRY_ON_ACCESS_TOKEN', 'OPENAI_IMAGE_MODEL'];
+  const keys = ['HF_TOKEN', 'HF_IMAGE_MODEL', 'HF_PROVIDER', 'OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'TRY_ON_ACCESS_TOKEN', 'OPENAI_IMAGE_MODEL'];
   const previous = keys.map((key) => [key, process.env[key]]);
   for (const key of keys) process.env[key] = '';
   t.after(() => {
@@ -145,9 +145,9 @@ test('actual exported backend boots without API keys and preserves route validat
     assert.equal(response.status, 200);
     assert.equal(response.body.available, false);
     assert.equal(response.body.code, 'PROVIDER_NOT_CONFIGURED');
-    assert.equal(response.body.provider, 'gemini');
+    assert.equal(response.body.provider, 'huggingface');
     assert.equal(response.body.requiresAccessCode, true);
-    assert.equal(response.body.model, 'gemini-3.1-flash-image');
+    assert.equal(response.body.model, 'black-forest-labs/FLUX.1-Kontext-dev');
   });
 
   await t.test('POST /api/try-on fails closed with 503 when no image provider is configured', async () => {
