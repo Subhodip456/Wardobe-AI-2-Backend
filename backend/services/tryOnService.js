@@ -139,6 +139,8 @@ function readGeneratedImage(data) {
 }
 
 async function readGeneratedHuggingFaceImage(response) {
+  console.log("response data",response.data);
+  console.log("response",response);
   if (!response.ok) {
     let error;
     try { error = await response.json(); } catch { /* provider may return plain text */ }
