@@ -5,7 +5,8 @@ const OUTPUT_IMAGE_BYTES = 2900000;
 const PROVIDER_RESPONSE_BYTES = 4100000;
 const DEFAULT_TIMEOUT_MS = 240000;
 // Hugging Face's documented image-to-image model/provider pair; override in Vercel if needed.
-const DEFAULT_IMAGE_MODEL = 'black-forest-labs/FLUX.2-klein-9B';
+//const DEFAULT_IMAGE_MODEL = 'black-forest-labs/FLUX.2-klein-9B';
+const DEFAULT_IMAGE_MODEL = 'black-forest-labs/FLUX.2-klein-4B';
 const PROVIDER = 'huggingface';
 const CATEGORIES = new Set(['top', 'bottom', 'dress', 'outerwear']);
 const DISCLAIMER = 'AI-generated styling preview, not a fit or size guarantee. Details and appearance may differ from the real garment.';
