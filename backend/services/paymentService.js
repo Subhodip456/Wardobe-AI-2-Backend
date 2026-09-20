@@ -19,8 +19,7 @@ class PaymentError extends Error {
 function getPaymentConfig(env = process.env) {
   const key = env.RAZORPAY_KEY_ID?.trim() || '';
   const validMode = key.startsWith('rzp_live_') || (key.startsWith('rzp_test_') &&
-    env.ALLOW_TEST_PAYMENTS === 'true' && env.VERCEL_ENV === 'production' &&
-    (env.VERCEL_ENV === 'preview' || env.NODE_ENV !== 'production'));
+    env.ALLOW_TEST_PAYMENTS === 'true' && env.VERCEL_ENV === 'production' 
   const configured = Boolean(
     validMode &&
     env.RAZORPAY_KEY_SECRET?.trim() &&
