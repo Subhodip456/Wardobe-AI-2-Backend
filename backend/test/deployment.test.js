@@ -97,7 +97,7 @@ test('Vercel routes target an existing function with an adequate image-generatio
 
 test('actual exported backend boots without API keys and preserves route validation', async (t) => {
   // Empty values prevent dotenv from loading real credentials from a developer's .env file.
-  const keys = ['FAL_KEY', 'OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET', 'UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN', 'OPENAI_IMAGE_MODEL'];
+  const keys = ['FAL_KEY', 'OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET', 'MONGODB_URI', 'MONGODB_DB_NAME', 'OPENAI_IMAGE_MODEL'];
   const previous = keys.map((key) => [key, process.env[key]]);
   for (const key of keys) process.env[key] = '';
   t.after(() => {
