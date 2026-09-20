@@ -1,5 +1,6 @@
 const express = require('express');
-const { getTryOnConfig, validAccessToken, generateTryOn, TryOnError } = require('../services/tryOnService');
+const { getTryOnConfig, validateTryOnInput, generateTryOn, TryOnError } = require('../services/tryOnService');
+const { assertDeviceId, consumeTryOnCredit, PaymentError } = require('../services/paymentService');
 
 function createTryOnRouter({ env = process.env, fetchImpl = global.fetch, timeoutMs } = {}) {
   const router = express.Router();
@@ -13,9 +14,11 @@ function createTryOnRouter({ env = process.env, fetchImpl = global.fetch, timeou
   router.post('/', (req, res, next) => {
     const config = getTryOnConfig(env);
     if (!config.available) return res.status(503).json({ code: config.code, message: config.message });
-    // Authenticate before decoding a potentially large photo upload. Never embed this code in the app bundle.
-    if (!validAccessToken(req.get('Authorization'), env.TRY_ON_ACCESS_TOKEN)) {
-      return res.status(401).json({ code: 'ACCESS_CODE_REQUIRED', message: 'Enter the private try-on access code provided by the backend owner. Do not enter a Fal or other provider API key.' });
+    // A server-side payment credit, tied to this app installation, gates each
+    // billable Fal generation. No provider key or private beta code reaches the app.
+    try { assertDeviceId(req.get('X-Wardrobe-Device-ID')); } catch (error) {
+      if (error instanceof PaymentError) return res.status(error.status).json({ code: error.code, message: error.message });
+      return res.status(400).json({ code: 'INVALID_DEVICE', message: 'This device could not be identified. Reopen the app and try again.' });
     }
     if (!req.is('application/json')) {
       return res.status(415).json({ code: 'JSON_REQUIRED', message: 'Send the preview request as JSON.' });
@@ -27,11 +30,18 @@ function createTryOnRouter({ env = process.env, fetchImpl = global.fetch, timeou
     req.once('aborted', onDisconnect);
     res.once('close', onDisconnect);
     try {
+      // Validate the local request first; malformed photos must never consume a
+      // paid credit. A credit is consumed immediately before the Fal request.
+      validateTryOnInput(req.body);
+      const creditsRemaining = await consumeTryOnCredit(req.get('X-Wardrobe-Device-ID'), { env, fetchImpl });
       const result = await generateTryOn(req.body, { env, fetchImpl, timeoutMs, signal: controller.signal });
-      if (!res.destroyed) res.json(result);
+      if (!res.destroyed) res.json({ ...result, creditsRemaining });
     } catch (error) {
       if (res.destroyed) return;
       if (error instanceof TryOnError) {
+        return res.status(error.status).json({ code: error.code, message: error.message });
+      }
+      if (error instanceof PaymentError) {
         return res.status(error.status).json({ code: error.code, message: error.message });
       }
       res.status(500).json({ code: 'TRY_ON_FAILED', message: 'Could not create your preview. Please try again later.' });

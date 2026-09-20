@@ -1,4 +1,3 @@
-const { createHash, timingSafeEqual } = require('node:crypto');
 const { createFalClient, ValidationError } = require('@fal-ai/client');
 
 const INPUT_IMAGE_BYTES = 1024 * 1024;
@@ -18,24 +17,11 @@ class TryOnError extends Error {
 }
 
 function getTryOnConfig(env = process.env) {
-  const base = { available: false, provider: PROVIDER, requiresAccessCode: true, model: FAL_TRY_ON_ENDPOINT };
+  const base = { available: false, provider: PROVIDER, requiresPurchase: true, model: FAL_TRY_ON_ENDPOINT };
   if (!env.FAL_KEY?.trim()) {
     return { ...base, code: 'PROVIDER_NOT_CONFIGURED', message: 'Add the server-only FAL_KEY to the backend environment, then redeploy.' };
   }
-  if (!env.TRY_ON_ACCESS_TOKEN || env.TRY_ON_ACCESS_TOKEN.length < 24 || env.TRY_ON_ACCESS_TOKEN.length > 512 ||
-      /[^\x21-\x7e]/.test(env.TRY_ON_ACCESS_TOKEN) || env.TRY_ON_ACCESS_TOKEN === env.FAL_KEY.trim() ||
-      /^(?:sk-|AIza|hf_)/.test(env.TRY_ON_ACCESS_TOKEN)) {
-    return { ...base, code: 'ACCESS_NOT_CONFIGURED', message: 'The backend owner must configure a separate private try-on access code of at least 24 characters and redeploy.' };
-  }
   return { ...base, available: true };
-}
-
-function validAccessToken(authorization, expected) {
-  if (typeof authorization !== 'string' || !authorization.startsWith('Bearer ') || !expected) return false;
-  const supplied = authorization.slice(7);
-  if (!supplied || supplied.length > 512) return false;
-  const digest = (value) => createHash('sha256').update(value).digest();
-  return timingSafeEqual(digest(supplied), digest(expected));
 }
 
 function decodeBase64(base64, maximumBytes) {
@@ -70,8 +56,6 @@ function validWebpBase64(base64, maximumBytes) {
 
 function validateTryOnInput(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw new TryOnError(400, 'INVALID_REQUEST', 'Choose a person photo and a garment before generating.');
-  if (body.consent !== true) throw new TryOnError(400, 'CONSENT_REQUIRED', 'Confirm permission to send both photos to the backend and Fal for this preview.');
-  if (body.consentProvider !== PROVIDER) throw new TryOnError(400, 'CONSENT_PROVIDER_MISMATCH', 'Update the app and agree to send both photos to Fal before generating.');
   if (!CATEGORIES.has(body.category)) throw new TryOnError(400, 'UNSUPPORTED_CATEGORY', 'Choose a top, bottom, dress, or outerwear item for your preview.');
   for (const field of ['personImage', 'garmentImage']) {
     const image = body[field];
@@ -163,4 +147,4 @@ async function generateTryOn(body, { env = process.env, fetchImpl = global.fetch
   }
 }
 
-module.exports = { getTryOnConfig, validAccessToken, validateTryOnInput, generateTryOn, TryOnError, FAL_TRY_ON_ENDPOINT };
+module.exports = { getTryOnConfig, validateTryOnInput, generateTryOn, TryOnError, FAL_TRY_ON_ENDPOINT };

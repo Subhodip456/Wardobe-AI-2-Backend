@@ -1,30 +1,22 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { getTryOnConfig, validAccessToken, validateTryOnInput, generateTryOn, TryOnError, FAL_TRY_ON_ENDPOINT } = require('../services/tryOnService');
+const { getTryOnConfig, validateTryOnInput, generateTryOn, TryOnError, FAL_TRY_ON_ENDPOINT } = require('../services/tryOnService');
 
-const accessCode = 'private-test-access-code-12345';
 const providerKey = 'test-only-not-a-real-fal-key';
 const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0xff, 0xd9]).toString('base64');
 const image = `data:image/jpeg;base64,${jpeg}`;
 const outputPng = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
-const env = { FAL_KEY: providerKey, TRY_ON_ACCESS_TOKEN: accessCode };
-const input = { personImage: image, garmentImage: image, category: 'outerwear', consent: true, consentProvider: 'fal' };
+const env = { FAL_KEY: providerKey };
+const input = { personImage: image, garmentImage: image, category: 'outerwear' };
 
-test('configuration requires Fal credentials and a separate access code', () => {
+test('configuration requires Fal credentials', () => {
   assert.equal(getTryOnConfig({}).code, 'PROVIDER_NOT_CONFIGURED');
-  assert.equal(getTryOnConfig({ FAL_KEY: providerKey }).code, 'ACCESS_NOT_CONFIGURED');
-  assert.deepEqual(getTryOnConfig(env), { available: true, provider: 'fal', requiresAccessCode: true, model: FAL_TRY_ON_ENDPOINT });
-  assert.equal(getTryOnConfig({ ...env, TRY_ON_ACCESS_TOKEN: providerKey }).code, 'ACCESS_NOT_CONFIGURED');
+  assert.deepEqual(getTryOnConfig(env), { available: true, provider: 'fal', requiresPurchase: true, model: FAL_TRY_ON_ENDPOINT });
 });
 
-test('access-code comparison does not accept the provider key', () => {
-  assert.equal(validAccessToken(`Bearer ${accessCode}`, accessCode), true);
-  assert.equal(validAccessToken(`Bearer ${providerKey}`, accessCode), false);
-});
-
-test('input requires fresh Fal consent and valid JPEGs', () => {
+test('input requires supported categories and valid JPEGs', () => {
   assert.equal(validateTryOnInput(input).category, 'outerwear');
-  assert.throws(() => validateTryOnInput({ ...input, consentProvider: 'huggingface' }), /Fal/);
+  assert.throws(() => validateTryOnInput({ ...input, category: 'shoes' }), /top, bottom, dress, or outerwear/);
   assert.throws(() => validateTryOnInput({ ...input, personImage: 'not-an-image' }), /JPEG/);
 });
 
