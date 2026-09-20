@@ -6,7 +6,7 @@ const { MongoMemoryServer } = require('mongodb-memory-server-core');
 const { createMongoPaymentStore } = require('../services/mongoPaymentStore');
 const { PLANS, getPaymentConfig, createOrder, getCredits, verifyPayment, consumeTryOnCredit, PaymentError } = require('../services/paymentService');
 
-const env = { RAZORPAY_KEY_ID: 'rzp_test_public_key', RAZORPAY_KEY_SECRET: 'test-only-payment-secret', MONGODB_URI: 'mongodb://unused-injected-store', MONGODB_DB_NAME: 'payment_tests' };
+const env = { ALLOW_TEST_PAYMENTS: 'true', RAZORPAY_KEY_ID: 'rzp_test_public_key', RAZORPAY_KEY_SECRET: 'test-only-payment-secret', MONGODB_URI: 'mongodb://unused-injected-store', MONGODB_DB_NAME: 'payment_tests' };
 const deviceId = '4e44c4e4-8df0-4a28-8bc5-f6f3fe87f825';
 const otherDevice = '5e44c4e4-8df0-4a28-8bc5-f6f3fe87f825';
 describe('MongoDB integration (opt in with RUN_MONGODB_INTEGRATION=1)', { skip: process.env.RUN_MONGODB_INTEGRATION !== '1' }, () => {
@@ -28,10 +28,18 @@ function fixture() {
   const collection = client.db('wardrobe_tests').collection(`orders_${++sequence}`);
   const store = createMongoPaymentStore(collection);
   let orderNumber = 0;
+  const providerOrders = new Map();
   const fetchImpl = async (url, init) => {
+    if (url.startsWith('https://api.razorpay.com/v1/payments/')) {
+      const id = url.split('/').pop();
+      const order_id = id.slice(4);
+      return { ok: true, json: async () => ({ id, order_id, amount: providerOrders.get(order_id), currency: 'INR', status: 'captured', captured: true, amount_refunded: 0, refund_status: null }) };
+    }
     assert.equal(url, 'https://api.razorpay.com/v1/orders');
     const body = JSON.parse(init.body);
-    return { ok: true, json: async () => ({ id: `order_test_${++orderNumber}`, amount: body.amount, currency: body.currency }) };
+    const id = `order_test_${++orderNumber}`;
+    providerOrders.set(id, body.amount);
+    return { ok: true, json: async () => ({ id, amount: body.amount, currency: body.currency }) };
   };
   const options = { env, store, fetchImpl };
   const paymentFor = (orderId) => ({ deviceId, orderId, paymentId: `pay_${orderId}`, signature: createHmac('sha256', env.RAZORPAY_KEY_SECRET).update(`${orderId}|pay_${orderId}`).digest('hex') });
@@ -111,7 +119,7 @@ test('orders and balances persist across store and client instances', async () =
   try {
     const store = createMongoPaymentStore(secondClient.db('wardrobe_tests').collection(collection.collectionName));
     assert.equal(await getCredits(deviceId, { env, store }), 9);
-    await verifyPayment(paymentFor(order.orderId), { env, store });
+    await verifyPayment(paymentFor(order.orderId), { ...options, store });
     assert.equal(await getCredits(deviceId, { env, store }), 9);
   } finally { await secondClient.close(); }
 });

@@ -1,4 +1,5 @@
 const { MongoClient } = require('mongodb');
+const { createSecurityStore } = require('./securityStore');
 
 // Reuse the connection pool across warm Vercel invocations. No connection is
 // opened at import time, so health/config routes work before database setup.
@@ -18,9 +19,12 @@ async function getPaymentStore(env = process.env) {
     entry.promise = (async () => {
       try {
         await client.connect();
-        const orders = client.db(dbName).collection('try_on_payment_orders');
+        const db = client.db(dbName);
+        const orders = db.collection('try_on_payment_orders');
         await orders.createIndex({ deviceId: 1, state: 1, createdAt: 1 });
-        return createMongoPaymentStore(orders);
+        const security = createSecurityStore(db);
+        await security.ensureIndexes();
+        return Object.assign(createMongoPaymentStore(orders), { security });
       } catch (error) {
         if (cached === entry) cached = undefined;
         await client.close().catch(() => {});
@@ -48,18 +52,18 @@ function createMongoPaymentStore(orders) {
         $set: { state: 'paid', paymentId, remaining: credits, paidAt: new Date() },
       });
     },
-    async getCredits(deviceId) {
+    async getCredits(deviceId, billingMode) {
       const totals = await orders.aggregate([
-        { $match: { deviceId, state: 'paid', remaining: { $gt: 0 } } },
+        { $match: { deviceId, billingMode, state: 'paid', remaining: { $gt: 0 } } },
         { $group: { _id: null, credits: { $sum: '$remaining' } } },
       ]).toArray();
       return totals[0]?.credits || 0;
     },
-    async consumeCredit(deviceId) {
+    async consumeCredit(deviceId, billingMode) {
       // Conditional decrement is atomic: concurrent requests cannot spend the
       // last credit twice. No multi-document transactions are required.
       const order = await orders.findOneAndUpdate(
-        { deviceId, state: 'paid', remaining: { $gt: 0 } },
+        { deviceId, billingMode, state: 'paid', remaining: { $gt: 0 } },
         { $inc: { remaining: -1 } },
         { sort: { createdAt: 1, _id: 1 }, returnDocument: 'after', includeResultMetadata: false },
       );

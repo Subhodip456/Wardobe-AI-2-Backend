@@ -150,22 +150,22 @@ test('actual exported backend boots without API keys and preserves route validat
     assert.equal(response.body.model, 'fal-ai/image-apps-v2/virtual-try-on');
   });
 
-  await t.test('POST /api/try-on fails closed with 503 when no image provider is configured', async () => {
+  await t.test('POST /api/try-on requires authentication before accessing the provider', async () => {
     const response = await requestJson(server, '/api/try-on', 'POST', {});
-    assert.equal(response.status, 503);
-    assert.equal(response.body.code, 'PROVIDER_NOT_CONFIGURED');
+    assert.equal(response.status, 401);
+    assert.equal(response.body.code, 'AUTH_REQUIRED');
   });
 
-  await t.test('POST /api/outfit/generate rejects an invalid wardrobe before calling Claude', async () => {
+  await t.test('POST /api/outfit/generate rejects unauthenticated callers before calling Claude', async () => {
     const response = await requestJson(server, '/api/outfit/generate', 'POST', {});
-    assert.equal(response.status, 400);
-    assert.equal(response.body.error, 'No wardrobe items provided');
+    assert.equal(response.status, 401);
+    assert.equal(response.body.code, 'AUTH_REQUIRED');
   });
 
-  await t.test('POST /api/wardrobe/tag rejects a missing image before calling Claude', async () => {
+  await t.test('POST /api/wardrobe/tag rejects unauthenticated callers before calling Claude', async () => {
     const response = await requestJson(server, '/api/wardrobe/tag', 'POST', {});
-    assert.equal(response.status, 400);
-    assert.equal(response.body.error, 'No image uploaded');
+    assert.equal(response.status, 401);
+    assert.equal(response.body.code, 'AUTH_REQUIRED');
   });
 
   assert.equal(providerFetch.mock.callCount(), 0);

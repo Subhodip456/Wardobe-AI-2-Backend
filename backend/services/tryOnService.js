@@ -92,7 +92,7 @@ function validateFalMediaUrl(value) {
   try { parsed = new URL(value); } catch { throw new TryOnError(502, 'INVALID_PREVIEW', 'Fal returned an invalid preview URL.'); }
   // Fal's generated media is served from its own HTTPS media hosts. Only expose
   // this allowlisted URL to the mobile app; never accept an arbitrary provider URL.
-  if (parsed.protocol !== 'https:' || !parsed.hostname.endsWith('.fal.media')) {
+  if (parsed.protocol !== 'https:' || !parsed.hostname.endsWith('.fal.media') || parsed.username || parsed.password || (parsed.port && parsed.port !== '443')) {
     throw new TryOnError(502, 'INVALID_PREVIEW', 'Fal returned an unexpected preview location.');
   }
   return parsed.toString();

@@ -16,9 +16,12 @@ function createTryOnRouter({ env = process.env, fetchImpl = global.fetch, timeou
     if (!config.available) return res.status(503).json({ code: config.code, message: config.message });
     // A server-side payment credit, tied to this app installation, gates each
     // billable Fal generation. No provider key or private beta code reaches the app.
-    try { assertDeviceId(req.get('X-Wardrobe-Device-ID')); } catch (error) {
+    try { assertDeviceId(req.auth?.subject); } catch (error) {
       if (error instanceof PaymentError) return res.status(error.status).json({ code: error.code, message: error.message });
       return res.status(400).json({ code: 'INVALID_DEVICE', message: 'This device could not be identified. Reopen the app and try again.' });
+    }
+    if (req.get('X-Photo-Consent') !== 'fal-photos-v1') {
+      return res.status(400).json({ code: 'CONSENT_REQUIRED', message: 'Confirm photo processing before generating a preview.' });
     }
     if (!req.is('application/json')) {
       return res.status(415).json({ code: 'JSON_REQUIRED', message: 'Send the preview request as JSON.' });
@@ -33,7 +36,7 @@ function createTryOnRouter({ env = process.env, fetchImpl = global.fetch, timeou
       // Validate the local request first; malformed photos must never consume a
       // paid credit. A credit is consumed immediately before the Fal request.
       validateTryOnInput(req.body);
-      const creditsRemaining = await consumeTryOnCredit(req.get('X-Wardrobe-Device-ID'), { env, fetchImpl });
+      const creditsRemaining = await consumeTryOnCredit(req.auth.subject, { env, fetchImpl });
       const result = await generateTryOn(req.body, { env, fetchImpl, timeoutMs, signal: controller.signal });
       if (!res.destroyed) res.json({ ...result, creditsRemaining });
     } catch (error) {
