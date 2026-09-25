@@ -38,6 +38,19 @@ async function getPaymentStore(env = process.env) {
 
 function createMongoPaymentStore(orders) {
   return {
+    async grantPlayPurchase(id, record) {
+      try {
+        await orders.updateOne({ _id: id }, { $setOnInsert: {
+          ...record, state: 'paid', remaining: record.credits, createdAt: new Date(), paidAt: new Date(),
+        } }, { upsert: true });
+      } catch (error) {
+        if (error.code !== 11000) throw error;
+      }
+      const stored = await orders.findOne({ _id: id });
+      if (!stored || stored.deviceId !== record.deviceId || stored.productId !== record.productId || stored.billingMode !== record.billingMode) {
+        throw new Error('Purchase ledger ownership mismatch');
+      }
+    },
     async createOrder(orderId, record) {
       // MongoDB's unique _id makes the Razorpay order the permanent replay key.
       await orders.insertOne({ _id: orderId, ...record, state: 'pending', remaining: 0, createdAt: new Date() });

@@ -1,6 +1,7 @@
 const express = require('express');
 const { getTryOnConfig, validateTryOnInput, generateTryOn, TryOnError } = require('../services/tryOnService');
-const { assertDeviceId, consumeTryOnCredit, PaymentError } = require('../services/paymentService');
+const { assertDeviceId, PaymentError } = require('../services/paymentService');
+const { consumeTryOnCredit } = require('../services/googlePlayService');
 
 function createTryOnRouter({ env = process.env, fetchImpl = global.fetch, timeoutMs } = {}) {
   const router = express.Router();

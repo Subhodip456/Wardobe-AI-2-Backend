@@ -79,7 +79,7 @@ async function middlewareRequest({ path = '/payments/credits', method = 'GET', a
 }
 
 test('a UUID header alone cannot access any protected API', async () => {
-  for (const path of ['/payments/credits', '/payments/orders', '/payments/verify', '/try-on', '/wardrobe/tag', '/outfit/generate']) {
+  for (const path of ['/payments/credits', '/payments/orders', '/payments/verify', '/payments/google-play/account', '/payments/google-play/verify', '/try-on', '/wardrobe/tag', '/outfit/generate']) {
     const r = await middlewareRequest({ path, method: 'POST', headers: { 'X-Wardrobe-Device-ID': subject } });
     assert.equal(r.res.statusCode, 401);
     assert.equal(r.nextCalled, false);
